@@ -8,7 +8,7 @@ public class Movement : MonoBehaviour
     private Rigidbody rb;
     private Input input;
     public float speed;
-    public void Move(Vector2 movement)
+    public void Move(Vector3 movement)
     {
         direction = movement;
     }
