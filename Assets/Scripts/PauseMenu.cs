@@ -9,18 +9,19 @@ public class PauseMenu : MonoBehaviour
     public Slider volume;
     public static bool GameIsPaused = false;
     public GameObject pauseMenu;
+    private Input input;
     // Start is called before the first frame update
     void Start()
     {
         volume.value = AudioListener.volume;
+        //pause the game on escape key press//
+        input.UI.Pause.started += ctx => PauseGame();
+
     }
 
-    // Update is called once per frame
-    void Update()
+   
+    void PauseGame()
     {
-        ///escape key pauses and unpauses the game 
-        if (GameIsPaused)
-        {
             if (GameIsPaused)
             {
                 Resume();
@@ -29,7 +30,6 @@ public class PauseMenu : MonoBehaviour
             {
                 Pause();
             }
-        }
     }
     /// <summary>
     /// unpause the game time and close the pause menu and lock the cursor of the player
@@ -64,5 +64,19 @@ public class PauseMenu : MonoBehaviour
     public void Exit()
     {
         Application.Quit();
+    }
+    private void Awake()
+    {
+        input = new Input();
+    }
+    private void OnEnable()
+    {
+        input.Enable();
+
+    }
+    private void OnDisable()
+    {
+        input.Disable();
+
     }
 }
