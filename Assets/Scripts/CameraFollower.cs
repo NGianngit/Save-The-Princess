@@ -25,7 +25,7 @@ public class CameraFollower : MonoBehaviour
     {
         mainCamera = GetComponent<Camera>();
     }
-    private void Update()
+    private void FixedUpdate()
     {
         //zooms the camera in when the dialogue is running.
 

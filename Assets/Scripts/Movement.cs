@@ -14,7 +14,7 @@ public class Movement : MonoBehaviour
     }
     // Start is called before the first frame update
     void Start()
-    {
+    {   
         input.Player.Move.performed += ctx => Move(ctx.ReadValue<Vector3>());
         rb = GetComponent<Rigidbody>();
         
