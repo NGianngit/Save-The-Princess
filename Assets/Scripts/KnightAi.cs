@@ -67,8 +67,16 @@ public class KnightAi : MonoBehaviour
             animator.SetBool("IsRunning", false);
             Patroling();
         }
-    }
 
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        m_CaughtPlayer = true;
+    }
+    private void OnTriggerExit(Collider other)
+    {
+        m_CaughtPlayer = false;
+    }
     private void Chasing()
     {
         //  The enemy is chasing the player
