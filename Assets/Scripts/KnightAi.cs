@@ -31,9 +31,11 @@ public class KnightAi : MonoBehaviour
     bool m_PlayerNear;                              //  If the player is near, state of hearing
     bool m_IsPatrol;                                //  If the enemy is patrol, state of patroling
     bool m_CaughtPlayer;                            //  if the enemy has caught the player
-
+    Animator animator;
     void Start()
     {
+        //call animator//
+        animator = GetComponent<Animator>();
         m_PlayerPosition = Vector3.zero;
         m_IsPatrol = true;
         m_CaughtPlayer = false;
@@ -57,9 +59,12 @@ public class KnightAi : MonoBehaviour
         if (!m_IsPatrol)
         {
             Chasing();
+            animator.SetBool("IsWalking", false);
+            animator.SetBool("IsRunning", true);
         }
         else
-        {
+        {   
+            animator.SetBool("IsRunning", false);
             Patroling();
         }
     }
@@ -72,6 +77,7 @@ public class KnightAi : MonoBehaviour
 
         if (!m_CaughtPlayer)
         {
+            
             Move(speedRun);
             navMeshAgent.SetDestination(m_PlayerPosition);          //  set the destination of the enemy to the player location
         }
@@ -82,6 +88,7 @@ public class KnightAi : MonoBehaviour
                 //  Check if the enemy is not near to the player, returns to patrol after the wait time delay
                 m_IsPatrol = true;
                 m_PlayerNear = false;
+                
                 Move(speedWalk);
                 m_TimeToRotate = timeToRotate;
                 m_WaitTime = startWaitTime;
@@ -91,7 +98,7 @@ public class KnightAi : MonoBehaviour
             {
                 if (Vector3.Distance(transform.position, GameObject.FindGameObjectWithTag("Player").transform.position) >= 2.5f)
                     //  Wait if the current position is not the player position
-                    Stop();
+                Stop();
                 m_WaitTime -= Time.deltaTime;
             }
         }
@@ -125,11 +132,13 @@ public class KnightAi : MonoBehaviour
                 if (m_WaitTime <= 0)
                 {
                     NextPoint();
+                    animator.SetBool("IsWalking", true);
                     Move(speedWalk);
                     m_WaitTime = startWaitTime;
                 }
                 else
                 {
+                    animator.SetBool("IsWalking", false);
                     Stop();
                     m_WaitTime -= Time.deltaTime;
                 }
@@ -152,6 +161,8 @@ public class KnightAi : MonoBehaviour
     {
         navMeshAgent.isStopped = true;
         navMeshAgent.speed = 0;
+        animator.SetBool("IsRunning", false);
+        animator.SetBool("IsWalking", false);
     }
 
     void Move(float speed)
@@ -208,6 +219,7 @@ public class KnightAi : MonoBehaviour
                      *  If the player is behind a obstacle the player position will not be registered
                      * */
                     m_playerInRange = false;
+                    animator.SetBool("IsRunning", false);    // stop animation of chasing
                 }
             }
             if (Vector3.Distance(transform.position, player.position) > viewRadius)
@@ -217,6 +229,7 @@ public class KnightAi : MonoBehaviour
                  *  Or the enemy is a safe zone, the enemy will no chase
                  * */
                 m_playerInRange = false;                //  Change the sate of chasing
+                animator.SetBool("IsRunning", false);    // stop animation of chasing
             }
             if (m_playerInRange)
             {
