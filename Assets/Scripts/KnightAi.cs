@@ -6,11 +6,12 @@ public class KnightAi : MonoBehaviour
 {
     public UnityEngine.AI.NavMeshAgent navMeshAgent;               //  Nav mesh agent component
     public float startWaitTime = 4;                 //  Wait time of every action
-    public float timeToRotate = 2;                  //  Wait time when the enemy detect near the player without seeing
-    public float speedWalk = 6;                     //  Walking speed, speed in the nav mesh agent
-    public float speedRun = 9;                      //  Running speed
+    public float timeToRotate = 0.1f;                  //  Wait time when the enemy detect near the player without seeing
+    public float speedWalk = 3;                     //  Walking speed, speed in the nav mesh agent
+    public float speedRun = 5;                      //  Running speed
 
     public float viewRadius = 15;                   //  Radius of the enemy view
+    public float attackRadius = 2;                   //  Radius of enemy attack range
     public float viewAngle = 90;                    //  Angle of the enemy view
     public LayerMask playerMask;                    //  To detect the player with the raycast
     public LayerMask obstacleMask;                  //  To detect the obstacules with the raycast
@@ -28,6 +29,7 @@ public class KnightAi : MonoBehaviour
     float m_WaitTime;                               //  Variable of the wait time that makes the delay
     float m_TimeToRotate;                           //  Variable of the wait time to rotate when the player is near that makes the delay
     bool m_playerInRange;                           //  If the player is in range of vision, state of chasing
+    bool m_EnemyInAttackRange;                      //  If the player is in the enemies attack range
     bool m_PlayerNear;                              //  If the player is near, state of hearing
     bool m_IsPatrol;                                //  If the enemy is patrol, state of patroling
     bool m_CaughtPlayer;                            //  if the enemy has caught the player
@@ -54,29 +56,24 @@ public class KnightAi : MonoBehaviour
 
     private void Update()
     {
+        AttackView();                           // Check whether the player is in the enemy attack range
         EnviromentView();                       //  Check whether or not the player is in the enemy's field of vision
-
+        
         if (!m_IsPatrol)
         {
             Chasing();
             animator.SetBool("IsWalking", false);
-            animator.SetBool("IsRunning", true);
+            
         }
         else
         {   
             animator.SetBool("IsRunning", false);
+            animator.SetBool("IsWalking", true);
             Patroling();
         }
 
     }
-    private void OnTriggerEnter(Collider other)
-    {
-        m_CaughtPlayer = true;
-    }
-    private void OnTriggerExit(Collider other)
-    {
-        m_CaughtPlayer = false;
-    }
+    
     private void Chasing()
     {
         //  The enemy is chasing the player
@@ -85,10 +82,19 @@ public class KnightAi : MonoBehaviour
 
         if (!m_CaughtPlayer)
         {
-            
+            animator.SetBool("IsRunning", true);
+            animator.SetBool("IsAttacking", false);
             Move(speedRun);
             navMeshAgent.SetDestination(m_PlayerPosition);          //  set the destination of the enemy to the player location
         }
+        if (m_CaughtPlayer)
+        {
+            Move(speedWalk);
+            animator.SetBool("IsRunning", false);
+            animator.SetBool("IsAttacking", true);
+            navMeshAgent.SetDestination(m_PlayerPosition);          //  set the destination of the enemy to the player location
+        }
+
         if (navMeshAgent.remainingDistance <= navMeshAgent.stoppingDistance)    //  Control if the enemy arrive to the player location
         {
             if (m_WaitTime <= 0 && !m_CaughtPlayer && Vector3.Distance(transform.position, GameObject.FindGameObjectWithTag("Player").transform.position) >= 6f)
@@ -96,7 +102,10 @@ public class KnightAi : MonoBehaviour
                 //  Check if the enemy is not near to the player, returns to patrol after the wait time delay
                 m_IsPatrol = true;
                 m_PlayerNear = false;
-                
+                animator.SetBool("IsRunning", false);
+                animator.SetBool("IsWalking", true);
+
+
                 Move(speedWalk);
                 m_TimeToRotate = timeToRotate;
                 m_WaitTime = startWaitTime;
@@ -120,6 +129,7 @@ public class KnightAi : MonoBehaviour
             if (m_TimeToRotate <= 0)
             {
                 Move(speedWalk);
+                animator.SetBool("IsWalking", true);
                 LookingPlayer(playerLastPosition);
             }
             else
@@ -146,17 +156,12 @@ public class KnightAi : MonoBehaviour
                 }
                 else
                 {
-                    animator.SetBool("IsWalking", false);
+                    
                     Stop();
                     m_WaitTime -= Time.deltaTime;
                 }
             }
         }
-    }
-
-    private void OnAnimatorMove()
-    {
-
     }
 
     public void NextPoint()
@@ -179,10 +184,6 @@ public class KnightAi : MonoBehaviour
         navMeshAgent.speed = speed;
     }
 
-    void CaughtPlayer()
-    {
-        m_CaughtPlayer = true;
-    }
 
     void LookingPlayer(Vector3 player)
     {
@@ -204,7 +205,50 @@ public class KnightAi : MonoBehaviour
             }
         }
     }
+    void AttackView()
+    {
+        Collider[] isCaught = Physics.OverlapSphere(transform.position, attackRadius, playerMask);   //  Make an overlap sphere around the enemy to detect the playermask in the attackview radius
 
+        for (int i = 0; i < isCaught.Length; i++)
+        {
+            Transform player = isCaught[i].transform;
+            Vector3 dirToPlayer = (player.position - transform.position).normalized;
+            if (Vector3.Angle(transform.forward, dirToPlayer) < viewAngle / 2)
+            {
+                float dstToPlayer = Vector3.Distance(transform.position, player.position);          //  Distance of the enmy and the player
+                if (!Physics.Raycast(transform.position, dirToPlayer, dstToPlayer, obstacleMask))
+                {
+                    m_EnemyInAttackRange = true;             //  The player has entered the enemy attack range
+                    m_CaughtPlayer = true;                 //  Change the state to attacking the player
+                }
+                else
+                {
+                    /*
+                     *  If the player is behind a obstacle the player position will not be registered
+                     * */
+                    m_CaughtPlayer = false;                 //  Change the state to attacking the playe
+
+                }
+                if (Vector3.Distance(transform.position, player.position) > attackRadius)
+                {
+                    /*
+                     *  If the player is further than the attack radius, then the enemy will no longer attack.
+                     *  Or the enemy is a safe zone, the enemy will not attack
+                     * */
+                    m_CaughtPlayer = false;                 //  Change the state to attacking the playe
+
+                }
+                if (m_EnemyInAttackRange)
+                {
+                    /*
+                     *  If the enemy no longer in the attack range
+                     * */
+
+                    m_PlayerPosition = player.transform.position;       //  Save the player's current position if the player is in range of vision
+                }
+            }
+        }
+    }
     void EnviromentView()
     {
         Collider[] playerInRange = Physics.OverlapSphere(transform.position, viewRadius, playerMask);   //  Make an overlap sphere around the enemy to detect the playermask in the view radius
@@ -219,6 +263,7 @@ public class KnightAi : MonoBehaviour
                 if (!Physics.Raycast(transform.position, dirToPlayer, dstToPlayer, obstacleMask))
                 {
                     m_playerInRange = true;             //  The player has been seeing by the enemy and then the nemy starts to chasing the player
+                    
                     m_IsPatrol = false;                 //  Change the state to chasing the player
                 }
                 else
@@ -227,8 +272,9 @@ public class KnightAi : MonoBehaviour
                      *  If the player is behind a obstacle the player position will not be registered
                      * */
                     m_playerInRange = false;
-                    animator.SetBool("IsRunning", false);    // stop animation of chasing
+                    
                 }
+
             }
             if (Vector3.Distance(transform.position, player.position) > viewRadius)
             {
@@ -237,13 +283,14 @@ public class KnightAi : MonoBehaviour
                  *  Or the enemy is a safe zone, the enemy will no chase
                  * */
                 m_playerInRange = false;                //  Change the sate of chasing
-                animator.SetBool("IsRunning", false);    // stop animation of chasing
+                
             }
             if (m_playerInRange)
             {
                 /*
                  *  If the enemy no longer sees the player, then the enemy will go to the last position that has been registered
                  * */
+               
                 m_PlayerPosition = player.transform.position;       //  Save the player's current position if the player is in range of vision
             }
         }
