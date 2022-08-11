@@ -6,9 +6,9 @@ public class KnightAi : MonoBehaviour
 {
     public UnityEngine.AI.NavMeshAgent navMeshAgent;               //  Nav mesh agent component
     public float startWaitTime = 4;                 //  Wait time of every action
-    public float timeToRotate = 0.1f;                  //  Wait time when the enemy detect near the player without seeing
-    public float speedWalk = 3;                     //  Walking speed, speed in the nav mesh agent
-    public float speedRun = 5;                      //  Running speed
+    public float timeToRotate = 2;                  //  Wait time when the enemy detect near the player without seeing
+    public float speedWalk = 6;                     //  Walking speed, speed in the nav mesh agent
+    public float speedRun = 9;                      //  Running speed
 
     public float viewRadius = 15;                   //  Radius of the enemy view
     public float attackRadius = 2;                   //  Radius of enemy attack range
@@ -194,6 +194,8 @@ public class KnightAi : MonoBehaviour
             {
                 m_PlayerNear = false;
                 Move(speedWalk);
+                animator.SetBool("IsWalking", true);
+
                 navMeshAgent.SetDestination(waypoints[m_CurrentWaypointIndex].position);
                 m_WaitTime = startWaitTime;
                 m_TimeToRotate = timeToRotate;
@@ -236,9 +238,10 @@ public class KnightAi : MonoBehaviour
                      *  Or the enemy is a safe zone, the enemy will not attack
                      * */
                     m_CaughtPlayer = false;                 //  Change the state to attacking the playe
+                    m_EnemyInAttackRange = false;
 
                 }
-                if (m_EnemyInAttackRange)
+                if (!m_EnemyInAttackRange)
                 {
                     /*
                      *  If the enemy no longer in the attack range
