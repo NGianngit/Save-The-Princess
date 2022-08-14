@@ -6,6 +6,8 @@ public class SwordAttackForPlayer : MonoBehaviour
 {
     Animator animator;
     private Input input;
+    public GameObject handSword;
+    public GameObject handBow;
     // Start is called before the first frame update
     void Start()
     {
@@ -17,14 +19,17 @@ public class SwordAttackForPlayer : MonoBehaviour
         input.Player.Attack.canceled += ctx => stopAttack();
     }
 
-  
+
     private void stopAttack()
     {
         animator.SetBool("IsAttacking", false);
     }
     private void attack()
     {
+        handSword.SetActive(true);
+        handBow.SetActive(false);
         animator.SetBool("IsAttacking", true);
+        
     }
     private void Awake()
     {
@@ -40,5 +45,7 @@ public class SwordAttackForPlayer : MonoBehaviour
         input.Disable();
 
     }
+
+    
 }
 
