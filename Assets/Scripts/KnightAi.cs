@@ -92,6 +92,7 @@ public class KnightAi : MonoBehaviour
             Move(speedWalk);
             animator.SetBool("IsRunning", false);
             animator.SetBool("IsAttacking", true);
+
             navMeshAgent.SetDestination(m_PlayerPosition);          //  set the destination of the enemy to the player location
         }
 
@@ -298,4 +299,7 @@ public class KnightAi : MonoBehaviour
             }
         }
     }
+
+    
+       
 }
